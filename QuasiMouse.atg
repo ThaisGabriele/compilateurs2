@@ -1,0 +1,64 @@
+import java.io.*;
+
+COMPILER QuasiMouse
+
+CHARACTERS
+    letra = 'A'..'Z'.
+    digito = '0'..'9'.
+    caractere = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_".
+
+TOKENS
+    ident = letra.
+    numero = digito {digito}.
+    string = caractere caractere {caractere}.
+
+
+    /* Símbolos reservados */
+    
+    dolarSign = "$". /* Denota tanto o fim de um programa quanto a definição de uma função */
+    interrogacao = "?".
+    aspas = '"'.
+    ecomercial = "&".
+    circonflexo = "^".
+    exclamacao = "!".
+    ponto = ".".
+    doispontos = ":".
+    cerquilha = "#".
+    arroba = "@".
+    abreColchete = "[".
+    barraVertical = "|".
+    fechaColchete = "]".
+    abreParenteses = "(".
+    fechaparenteses = ")".
+    pontoEvirgula = ";".
+
+    /* Operadores */
+    maior = ">".
+    menor = "<".
+    igual = "=".
+
+COMMENTS FROM "~" TO '\n'
+
+IGNORE
+    '\n' + '\r' + '\t'
+
+PRODUCTIONS
+    QuasiMouse = Instrucao { Instrucao } dolarSign.
+    Instrucao = DeclaracaoFuncao | ChamadaFuncao | Condicional | Laco | Exp.
+    DeclaracaoFuncao = dolarSign ident [Args] pontoEvirgula { (Condicional | Exp | Laco) } arroba.
+    Args = ident { ',' ident }.    
+    ChamadaFuncao = cerquilha ident.
+    Condicional = Exp abreColchete Instrucao [ barraVertical Instrucao ] fechaColchete.
+    Laco = abreParenteses Exp ( circonflexo Instrucao | Instrucao circonflexo).
+    Exp = OperacaoAritmetica | OperacaoCondicional | Imprime | Assinalamento | Leitura. 
+    OperacaoAritmetica = T ( T "+" | T "-" ).
+    T = F (F "*" | F "/" ).
+    F = numero.
+    OperacaoCondicional = (ident numero | ident ident) OperadorRelacional.
+    OperadorRelacional = maior | menor | igual.
+    Imprime = aspas string aspas [ecomercial] | (ident | cerquilha ident) exclamacao [ecomercial] | ecomercial.
+    Assinalamento = numero ident ponto.
+    Leitura = interrogacao | interrogacao ident doispontos.
+
+
+END QuasiMouse.
