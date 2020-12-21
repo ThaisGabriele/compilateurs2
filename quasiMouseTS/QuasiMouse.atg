@@ -1,0 +1,136 @@
+/*
+  Thais e David, 2020
+	Compilador -- Tabela de Simbolos e Checagem Lexica, Sintatica e Semantica
+*/
+
+import java.util.List;
+import java.util.ArrayList;
+
+class NDesig {
+	String nome;
+	public NDesig(String n) {
+		nome = n;
+	}
+	public String getNome() {
+		return nome;
+	}
+}
+
+COMPILER QuasiMouse
+
+	private Tab ts;
+	private Obj atual; // indica qual é a função atual
+
+    private static final int // compare operators
+            eq = 0,
+            ne = 1,
+            lt = 2,
+            le = 3,
+            gt = 4,
+            ge = 5;
+	
+  private Struct getTipo(String tipo) {  // pega o tipo de um objeto
+		Obj o = ts.buscar(tipo);
+		Struct st = o.tipo;
+		return st;	
+	}
+
+	public void erro(String msg) {
+		errors.SemErr(t.line, t.col, msg);
+	}
+
+CHARACTERS
+  letra = 'A'..'Z'.
+  digito = '0'..'9'.
+  caractere = "abcdefghijklmnopqrstuvwxyz_".
+
+TOKENS
+    ident = letra.
+    numero = digito {digito}.
+    string = caractere {letra |caractere | digito}.
+
+    /* Símbolos reservados */
+    
+    dolarSign = "$". /* Denota tanto o fim de um programa quanto a definição de uma função */
+    interrogacao = "?".
+    aspas = '"'.
+    ecomercial = "&".
+    circunflexo = "^".
+    exclamacao = "!".
+    ponto = ".".
+    doispontos = ":".
+    cerquilha = "#".
+    arroba = "@".
+    abreColchete = "[".
+    barraVertical = "|".
+    fechaColchete = "]".
+    abreParenteses = "(".
+    fechaparenteses = ")".
+    pontoEvirgula = ";".
+
+    /* Operadores */
+    maior = ">".
+    menor = "<".
+    igual = "=".
+
+COMMENTS FROM "~" TO '\n'
+
+PRAGMAS
+	option = "$d".	(. ts.dump(); .)
+
+IGNORE
+    '\n' + '\r' + '\t'
+
+PRODUCTIONS
+
+  QuasiMouse                   (. atual = null; // não há função sendo compilada
+                                  ts = new Tab(this);
+                                  ts.abrirEscopo("Escopo Global") .)
+  = Instrucao 
+    { Instrucao } 
+    dolarSign                   (. ts.fecharEscopo(); .)
+  .
+  Instrucao 
+    = DeclaracaoFuncao <out >
+    | ChamadaFuncao 
+    | Condicional 
+    | Laco 
+    | Exp 
+    | Imprime 
+    | Leitura
+    .
+
+//  DeclaracaoFuncao = dolarSign ident [Args] pontoEvirgula { (Condicional | Exp | Laco) } arroba.
+
+
+  DeclaracaoFuncao                          (. String tipo = "";  Struct st; .)
+  = dolarSign                  
+                               
+    ident DesigI<out id>                    (. atual = ts.inserir(Obj.Func, id.getNome());
+                                             ts.abrirEscopo("Função " + id.getNome()) .)   
+    {
+     ',' ident  DesigI<out idArgs>          (. ts.inserir(Obj.Var, idArgs.getNome(),st); atual.nPars++;.)
+    }
+    pontoEvirgula
+    Bloco                                   (. atual.locais = ts.escopoAtual.locais; // Bloco com as instruções da func
+                                               ts.fecharEscopo(); .)
+    .    
+
+  Bloco 
+  = { Instrucao }  
+    arroba     
+  .                               
+    
+  Assinalamento 
+  = numero 
+    ident 
+    ponto.
+
+ 	DesigId<out NDesig n>          (.  .)
+    = id                        (. String nome = t.val; .)
+                                (. n = new NDesig(nome); .)
+	.   
+
+
+ 
+END QuasiMouse.

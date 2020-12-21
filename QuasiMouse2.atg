@@ -19,7 +19,7 @@ TOKENS
     interrogacao = "?".
     aspas = '"'.
     ecomercial = "&".
-    circunflexo = "^".
+    circonflexo = "^".
     exclamacao = "!".
     ponto = ".".
     doispontos = ":".
@@ -43,15 +43,14 @@ IGNORE
     '\n' + '\r' + '\t'
 
 PRODUCTIONS
-
-
+ 
     QuasiMouse = Instrucao { Instrucao } dolarSign.
-    Instrucao = DeclaracaoFuncao | ChamadaFuncao | Condicional | Laco | Exp | Imprime | Leitura .
-    DeclaracaoFuncao = dolarSign ident  { ',' ident } pontoEvirgula Bloco . 
-    Bloco = Instrucao { Instrucao } arroba .
+    Instrucao = DeclaracaoFuncao | ChamadaFuncao | Condicional | Laco | Exp | Imprime | Leitura.
+    DeclaracaoFuncao = dolarSign ident [Args] pontoEvirgula { (Condicional | Exp | Laco) } arroba.
+    Args = ident { ',' ident }.    
     ChamadaFuncao = cerquilha ident.
     Condicional = Exp abreColchete Instrucao [ barraVertical Instrucao ] fechaColchete.
-    Laco = abreParenteses Exp ( circunflexo Instrucao | Instrucao circunflexo).
+    Laco = abreParenteses Exp ( circonflexo Instrucao | Instrucao circonflexo).
     Exp = OperacaoAritmetica | OperacaoCondicional | Assinalamento. 
     OperacaoAritmetica = T ( T "+" | T "-" ).
     T = F (F "*" | F "/" ).
@@ -62,5 +61,8 @@ PRODUCTIONS
     Assinalamento = numero ident ponto.
     Leitura = interrogacao | interrogacao ident doispontos.
 
-
 END QuasiMouse.
+   
+   
+   
+   
