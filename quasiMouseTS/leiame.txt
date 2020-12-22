@@ -29,7 +29,7 @@ javac *.java
  
 [3] Compilando fonte (no diretorio base):
 
-java Compile fontesup/while.up
+java Compile fontes/test2.qm
 
 [4] Rodando fonte (no diretorio base):
 

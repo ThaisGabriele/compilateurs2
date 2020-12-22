@@ -9,16 +9,10 @@ class Struct {
 	static final int // categorias de tipos 
 	Int = 1; 
 	int cat; // Nenhum, Int, Int e Vetor
-	Struct tipoElemento; // tipo do elemento em vetor
 
 	public Struct(int cat) {
 		this.cat = cat;
 	}
-
-/*	public Struct(int cat, Struct tipoElemento) {
-		this.cat = cat; 
-		this.tipoElemento = tipoElemento;
-	} */
 
 	// checa se dois tipos sao o mesmo (equivalencia estrutural para vetor e equivalencia de nome pro resto)
 	public boolean igual (Struct outro) {
@@ -47,7 +41,7 @@ class Obj {
 				Prog = 4;
 	int cat; // categoria do objeto = Const, Var, Tipo, Func, Prog
 	String nome;
-	Struct tipo;
+	//Struct tipo;
 	Obj prox;
 	int val; // valor pra Const
 	int end; // Endereco pra Var e Funcao
@@ -56,20 +50,20 @@ class Obj {
 	Obj locais; // Func: parametros locais
 	Obj ultObj; // Func: ultimo Obj em locais
 
-	public Obj(int cat, String nome, Struct tipo) {
+	public Obj(int cat, String nome) {
 		this.cat = cat; 
 		this.nome = nome; 
-		this.tipo = tipo;
+	//	this.tipo = tipo;
 		this.locais = null;
 		this.prox = null;
 		this.ultObj = null;
 		nPars = 0;
 	}
 	
-	public void setTipo(Struct tipo)
-	{
-		this.tipo = tipo;
-	}
+//	public void setTipo(Struct tipo)
+//	{
+//		this.tipo = tipo;
+//	}
 
 	public void adicionaALocais(Obj o) {
 		if (locais == null) 
@@ -96,7 +90,7 @@ class Escopo {
 public class Tab {
 	static Escopo escopoAtual; // escopo atual (topo)
 	static int nivelAtual; // nivel do escopo atual	
-	static Struct tipoInt;
+//	static Struct tipoInt;
 //	static Struct semTipo;	
 	static Obj objTamVetor; // objetos pre-definidos
 	static Obj semObj;
@@ -193,7 +187,7 @@ public class Tab {
 			default: 
 				System.out.print("Null " + o.nome + " (");
 		}
-		dumpStruct(o.tipo);
+		//dumpStruct(o.tipo);
 		System.out.println(")");
 	}
 
@@ -227,11 +221,11 @@ public class Tab {
 	//	semObj = new Obj(Obj.Var, "null", semTipo);
 
 		// tipos pre-definidos
-		tipoInt = new Struct(Struct.Int);
+	//	tipoInt = new Struct(Struct.Int);
 	//	semTipo = new Struct(Struct.Nenhum);
 
 		// objetos pre-definidos
-		inserir(Obj.Tipo, "int", tipoInt);
+	//	inserir(Obj.Tipo, "int", tipoInt);
 	//	inserir(Obj.Tipo, "void", semTipo);
 	//	objTamVetor = inserir(Obj.Func, "len", tipoInt);
 	//	objTamVetor.adicionaALocais(new Obj(Obj.Var, "vLEN", new Struct(Struct.Vetor, semTipo)));

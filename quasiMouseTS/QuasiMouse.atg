@@ -21,33 +21,31 @@ COMPILER QuasiMouse
 	private Tab ts;
 	private Obj atual; // indica qual é a função atual
 
-    private static final int // compare operators
+  private static final int // compare operators
             eq = 0,
-            ne = 1,
             lt = 2,
-            le = 3,
-            gt = 4,
-            ge = 5;
+            gt = 4;
 	
-  private Struct getTipo(String tipo) {  // pega o tipo de um objeto
-		Obj o = ts.buscar(tipo);
-		Struct st = o.tipo;
-		return st;	
-	}
-
 	public void erro(String msg) {
 		errors.SemErr(t.line, t.col, msg);
 	}
+
+  private boolean verificaTipo(String s) {
+    return s != null && s.matches("[0-9]*");
+  }
 
 CHARACTERS
   letra = 'A'..'Z'.
   digito = '0'..'9'.
   caractere = "abcdefghijklmnopqrstuvwxyz_".
+  linhaComChar = ANY - '\r' - '\n'.
+  qualquerCharMenosAspas = linhaComChar - '\"'.
 
 TOKENS
     ident = letra.
     numero = digito {digito}.
-    string = caractere {letra |caractere | digito}.
+  //  string = caractere {letra |caractere | digito}.
+    string = '"' { qualquerCharMenosAspas | "\\\""} '"'.
 
     /* Símbolos reservados */
     
@@ -67,16 +65,17 @@ TOKENS
     abreParenteses = "(".
     fechaparenteses = ")".
     pontoEvirgula = ";".
+    virgula = ",".
 
     /* Operadores */
     maior = ">".
     menor = "<".
     igual = "=".
 
-COMMENTS FROM "~" TO '\n'
-
 PRAGMAS
 	option = "$d".	(. ts.dump(); .)
+
+COMMENTS FROM "~" TO '\n'
 
 IGNORE
     '\n' + '\r' + '\t'
@@ -85,52 +84,140 @@ PRODUCTIONS
 
   QuasiMouse                   (. atual = null; // não há função sendo compilada
                                   ts = new Tab(this);
-                                  ts.abrirEscopo("Escopo Global") .)
+                                  ts.abrirEscopo("Escopo Global"); .)
   = Instrucao 
     { Instrucao } 
     dolarSign                   (. ts.fecharEscopo(); .)
   .
-  Instrucao 
-    = DeclaracaoFuncao <out >
-    | ChamadaFuncao 
-    | Condicional 
-    | Laco 
-    | Exp 
-    | Imprime 
-    | Leitura
+  Instrucao // (. Operand op = null; .)              
+    = DeclaracaoFuncao 
+  //  | ChamadaFuncao 
+   // | Condicional 
+  //  | Laco 
+    | Assinalamento  // Condicional e Chamada vao dentro do assinalamento
+  //  | Imprime 
+  //  | Leitura
     .
 
-//  DeclaracaoFuncao = dolarSign ident [Args] pontoEvirgula { (Condicional | Exp | Laco) } arroba.
-
-
-  DeclaracaoFuncao                          (. String tipo = "";  Struct st; .)
-  = dolarSign                  
-                               
-    ident DesigI<out id>                    (. atual = ts.inserir(Obj.Func, id.getNome());
-                                             ts.abrirEscopo("Função " + id.getNome()) .)   
-    {
-     ',' ident  DesigI<out idArgs>          (. ts.inserir(Obj.Var, idArgs.getNome(),st); atual.nPars++;.)
+  DeclaracaoFuncao                          (. String s = ""; NDesig id; .)
+  = dolarSign DesigIdent<out id>            (. atual = ts.inserir(Obj.Func, id.getNome());
+                                               ts.abrirEscopo("Funcao " + id.getNome()); .)   
+    {  
+    ","
+     DesigIdent<out id>                     (. ts.inserir(Obj.Var, id.getNome()); atual.nPars++;.)
     }
     pontoEvirgula
     Bloco                                   (. atual.locais = ts.escopoAtual.locais; // Bloco com as instruções da func
                                                ts.fecharEscopo(); .)
-    .    
+  .        
 
   Bloco 
   = { Instrucao }  
     arroba     
   .                               
-    
-  Assinalamento 
-  = numero 
-    ident 
-    ponto.
+/*
+  ChamadaFuncao
+  = cerquilha 
+  DesigIdent<out id>                           
+  ";"                                          
+ .
+*/
+  Assinalamento                    (. Obj o; NDesig id; Operand num; .)
+  = Exp <out op>                       
+      [  DesigIdent<out id>         (. o = ts.buscar(id.getNome());  
+                                       Operand op = new Operand(o); .) // insere o valor na variavel
+                                      //Code.load(op);
+        ":"
+      ]
+   // [
+    //Condicional
+   // ]
+  .
 
- 	DesigId<out NDesig n>          (.  .)
-    = id                        (. String nome = t.val; .)
-                                (. n = new NDesig(nome); .)
+  Condicional <out int opr>		(. Operand opx, opy; opx = opy = null; .)
+  = 
+  abreColchete 
+  Instrucao 
+  [ barraVertical Instrucao ] 
+  fechaColchete
+  .
+
+  OpRel<out int opr>          (. opr = -1; .)
+    =  igual                  (. opr = eq; .)
+      | maior                 (. opr = gt; .)
+      | menor                 (. opr = lt; .)
+	.
+/*
+Casos:
+1. N. 1 + N:         ~ incremente N por 1
+2. X. Y:             ~ copie o valor de X para Y
+3. F. V. - H. - F:   ~ fuel = fuel - v - h
+4. A. 0 <            ~ if altitude < 0
+//A. A. B. / B. * -
+*/
+ 
+  Exp <out Operand op>          		(.  op=null; int opr; .) //retorna o valor da expressão entre dois ops
+  = 
+  Termo  <out op>                   
+  [Termo  <out op>]                // (. if (verificaTipo(op) == false) {
+                                      //    erro("deve ser inteiro"); }.)
+  [("-"                            // (. opr = objCode.sub .)
+  | "+" )]                         // (. opr = objCode.add .)
+  {
+      Termo  <out op> 
+      [Termo  <out op>]
+      ("-" | "+")
+  }
+  .
+
+  Termo <out Operand op>	   	(. op = null; .)
+  = Fator <out op>
+    {
+      (
+         "*" 
+         |  "/" 
+      )
+      Fator<out op>
+    }
+   .
+  
+  Fator <out Operand  op>    (. op = null; NDesig id;  .)
+  = numero                    (. op = new Operand(Integer.parseInt(t.val)); .)
+    | DesigIdent <out id>     (. Obj o = ts.buscar(id.getNome()); op = new Operand(o);  .)   
+    // | "#" chamada de funcao   
+  .
+  
+  Designador<out Operand op>      (.op=null; NDesig id; .)
+  = ident                         
+                               (.  Obj o = ts.buscar(t.val);
+                                   op = new Operand(o); .) // retorna o valor da variavel
+    "."
+  .
+
+
+  Imprime    
+  = aspas 
+    string 
+    aspas 
+    [ ecomercial ] 
+    | 
+      (
+        Exp<out op> 
+      | cerquilha Exp<out op> 
+      ) 
+    exclamacao 
+    [ecomercial] 
+    | ecomercial
+  .
+  
+  Leitura 
+    = interrogacao 
+    | interrogacao ident doispontos
+  .
+
+ 	DesigIdent<out NDesig n>         
+    = ident                        (. String nome = t.val; .)
+                                   (. n = new NDesig(nome); .)
 	.   
 
-
- 
 END QuasiMouse.
