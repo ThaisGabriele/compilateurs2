@@ -2,7 +2,6 @@
   Thais e David, 2020
 	Compilador -- Tabela de Simbolos e Checagem Lexica, Sintatica e Semantica
 */
-
 import java.util.List;
 import java.util.ArrayList;
 
@@ -122,11 +121,11 @@ PRODUCTIONS
   ";"                                          
  .
 */
-  Assinalamento                    (. Obj o; NDesig id; Operand num; .)
-  = Exp <out op>                       
+  Assinalamento                    (. Obj o; NDesig id; .)
+  = Exp <out Operand op>                       
       [  DesigIdent<out id>         (. o = ts.buscar(id.getNome());  
-                                       Operand op = new Operand(o); .) // insere o valor na variavel
-                                      //Code.load(op);
+                                        op = new Operand(o); .) // insere o valor na variavel
+                                      
         ":"
       ]
    // [
@@ -134,7 +133,7 @@ PRODUCTIONS
    // ]
   .
 
-  Condicional <out int opr>		(. Operand opx, opy; opx = opy = null; .)
+  Condicional <out int opr>		(. Operand opx, opy; opx = opy = null; opr = 0; .)
   = 
   abreColchete 
   Instrucao 
@@ -196,14 +195,12 @@ Casos:
 
 
   Imprime    
-  = aspas 
-    string 
-    aspas 
+  = string 
     [ ecomercial ] 
     | 
       (
-        Exp<out op> 
-      | cerquilha Exp<out op> 
+        Exp<out Operand op> 
+      | cerquilha Exp<out Operand op> 
       ) 
     exclamacao 
     [ecomercial] 
