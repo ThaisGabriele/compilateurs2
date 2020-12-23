@@ -44,12 +44,9 @@ public class Code {
     	trap	    = 31;
     public static final int // compare operators
             eq = 0,
-            ne = 1,
             lt = 2,
-            le = 3,
             gt = 4,
-            ge = 5;
-    private static int[] inverse = {ne, eq, ge, gt, le, lt};
+    private static int[] inverse = {ne, gt, lt};
     private static final int bufSize = 8192;
     public static byte[] buf;
     public static int pc;	        // next free byte in code buffer

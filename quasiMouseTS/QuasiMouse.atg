@@ -158,7 +158,7 @@ Casos:
   Exp <out Operand op>          		(.  op=null; int opr; .) //retorna o valor da expressão entre dois ops
   = 
   Termo  <out op>                   
-  [Termo  <out op>]                // (. if (verificaTipo(op) == false) {
+  [Termo  <out op>]                // (. if (verificaTipo(op) == false)  {
                                       //    erro("deve ser inteiro"); }.)
   [("-"                            // (. opr = objCode.sub .)
   | "+" )]                         // (. opr = objCode.add .)

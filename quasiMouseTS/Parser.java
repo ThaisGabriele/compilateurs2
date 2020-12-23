@@ -171,12 +171,12 @@ public class Parser {
 	}
 
 	void Assinalamento() {
-		Obj o; NDesig id; Operand num; 
-		op = Exp();
+		Obj o; NDesig id; 
+		Operand op = Exp();
 		if (la.kind == 1) {
 			id = DesigIdent();
 			o = ts.buscar(id.getNome());  
-			Operand op = new Operand(o); 
+			op = new Operand(o); 
 			Expect(11);
 		}
 	}
@@ -203,6 +203,8 @@ public class Parser {
 		if (la.kind == 1 || la.kind == 2) {
 			op = Termo();
 		}
+		if (verificaTipo(String(op))) {
+		  erro("deve ser inteiro"); }
 		if (la.kind == 24 || la.kind == 25) {
 			if (la.kind == 24) {
 				Get();
@@ -226,7 +228,7 @@ public class Parser {
 
 	int  Condicional() {
 		int  opr;
-		Operand opx, opy; opx = opy = null; 
+		Operand opx, opy; opx = opy = null; opr = 0; 
 		Expect(14);
 		Instrucao();
 		if (la.kind == 15) {
@@ -292,19 +294,17 @@ public class Parser {
 	}
 
 	void Imprime() {
-		if (la.kind == 6) {
+		if (la.kind == 3) {
 			Get();
-			Expect(3);
-			Expect(6);
 			if (la.kind == 7) {
 				Get();
 			}
 		} else if (la.kind == 1 || la.kind == 2 || la.kind == 12) {
 			if (la.kind == 1 || la.kind == 2) {
-				op = Exp();
+				Operand op = Exp();
 			} else {
 				Get();
-				op = Exp();
+				Operand op = Exp();
 			}
 			Expect(9);
 			if (la.kind == 7) {

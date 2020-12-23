@@ -1,10 +1,7 @@
 /*
-  Thais e David, 2020
-	Compilador -- Tabela de Simbolos e Checagem Lexica, Sintatica e Semantica
+  Por Thais e David, com base nos códigos da aula de Compiladores do prof. Marco Cristo
+	Compilador -- Tabela de Simbolos e Checagem Lexica, Sintatica e Semantica da linguagem QuasiMouse
 */
-
-import java.util.List;
-import java.util.ArrayList;
 
 class NDesig {
 	String nome;
@@ -18,10 +15,10 @@ class NDesig {
 
 COMPILER QuasiMouse
 
-	private Tab ts;
+	private Tab ts;  /* tabela de simbolos */
 	private Obj atual; // indica qual é a função atual
+  private Code objCode; // tradutor
 
-  private Code objCode;
   private static final int // compare operators
             eq = 0,
             lt = 2,
@@ -45,7 +42,6 @@ CHARACTERS
 TOKENS
     ident = letra.
     numero = digito {digito}.
-  //  string = caractere {letra |caractere | digito}.
     string = '"' { qualquerCharMenosAspas | "\\\""} '"'.
 
     /* Símbolos reservados */
@@ -90,7 +86,7 @@ PRODUCTIONS
     { Instrucao }                (. objCode.setDataSize(ts.escopoAtual.nVars);
     dolarSign                       ts.fecharEscopo(); .)
   .
-  Instrucao // (. Operand op = null; .)              
+  Instrucao            
     = DeclaracaoFuncao 
   //  | ChamadaFuncao 
    // | Condicional 
@@ -126,31 +122,6 @@ PRODUCTIONS
                                             
  .
 */
-  Assinalamento                    (. Obj o; NDesig id; Operand num; .)
-  = Exp <out op>                       
-      [  DesigIdent<out id>         (. o = ts.buscar(id.getNome());  
-                                       Operand op = new Operand(o); .) // insere o valor na variavel
-                                      //Code.load(op);
-        ":"
-      ]
-   // [
-    //Condicional
-   // ]
-  .
-
-  Condicional <out int opr>		(. Operand opx, opy; opx = opy = null; .)
-  = 
-  abreColchete 
-  Instrucao 
-  [ barraVertical Instrucao ] 
-  fechaColchete
-  .
-
-  OpRel<out int opr>          (. opr = -1; .)
-    =  igual                  (. opr = eq; .)
-      | maior                 (. opr = gt; .)
-      | menor                 (. opr = lt; .)
-	.
 /*
 Casos:
 1. N. 1 + N:         ~ incremente N por 1
@@ -159,50 +130,81 @@ Casos:
 4. A. 0 <            ~ if altitude < 0
 //A. A. B. / B. * -
 */
- 
-  Exp <out Operand op>          		(.  op=null; int opr; .) //retorna o valor da expressão entre dois ops
-  = 
-  Termo  <out op>                   
-  [Termo  <out op>]                // (. if (verificaTipo(op) == false) {
-                                      //    erro("deve ser inteiro"); }.)
-  [("-"                            // (. opr = objCode.sub .)
-  | "+" )]                         // (. opr = objCode.add .)
-  {
-      Termo  <out op>                  (. opr = objCode.sub .)
-      [Termo  <out op>]
-      ("-"                          
-      | "+")
-  }
+
+  Assinalamento                    (. Obj o; NDesig id; opr;.)
+  = Exp <out Operand op1>                       
+      [  DesigIdent<out id>         (. o = ts.buscar(id.getNome());  
+                                       Operand op = new Operand(o);
+                                       objCode.assign(op, op1);     .) 
+                                      // Code.load(op); .)
+        ":"
+      ] 
+    [
+    Exp <out Operand op2>           (. objCode.load(op1); objCode.load(op2);  .)  
+    OpRel <out opr>   
+    abreColchete 
+    Instrucao 
+    [ barraVertical Instrucao ] 
+    fechaColchete                 
+    ]
   .
 
-  Termo <out Operand op>	   	(. op = null; .)
+  OpRel<out int opr>          (. opr = -1; .)
+    =  igual                  (. opr = eq; .)
+      | maior                 (. opr = gt; .)
+      | menor                 (. opr = lt; .)
+	.
+ 
+  Exp <out Operand op>          		(. Operand op2; op=null; int opr; .) //retorna o valor da expressão entre dois ops
+  = 
+  Termo  <out op>                   
+  [Termo  <out op>]                //   (. if (verificaTipo(Integer.toString(op)) == false) {
+                                     //  erro("deve ser inteiro"); }.)
+  [("-"                               (. opr = objCode.sub; .)
+  | "+" )]                            (. opr = objCode.add; .)
+  {                                   (. objCode.load(op);  objCode.put(opr);.)
+      Termo  <out op2>             //   (. if (verificaTipo(Integer.toString(op2)) == false) {
+      [Termo  <out op2>]             //     erro("deve ser inteiro"); }.)
+      ("-"                            (. opr = objCode.sub; .)
+      | "+")                          (. opr = objCode.add; .)
+  }                                   (. objCode.load(op); objCode.put(opr); .)
+  .
+
+  Termo <out Operand op>	   	(. Operand op2; op = null; int opr; .)
   = Fator <out op>
     {
       (
-         "*" 
-         |  "/" 
-      )
-      Fator<out op>
+         "*"                   (. opr = objCode.mul; .)
+         |  "/"                (. opr = objCode.div; .)
+      )                        (. objCode.load(op);  .)
+      Fator<out op2>           (. objCode.load(op); objCode.put(opr); .)
     }
    .
   
-  Fator <out Operand  op>    (. op = null; NDesig id;  .)
-  = numero                    (. op = new Operand(Integer.parseInt(t.val)); .)
-    | DesigIdent <out id>     (. Obj o = ts.buscar(id.getNome()); op = new Operand(o);  .)   
-    // | "#" chamada de funcao   
-    [
-      Parametros<op>          (. .)
-    ]
+  Fator <out Operand  op>     (. op = null; NDesig id;  .)
+  =   numero                  (. op = new Operand(Integer.parseInt(t.val)); Code.load(op); .)
+    | DesigIdent <out id>     (. Obj o = ts.buscar(id.getNome()); op = new Operand(o); Code.load(op); .)   
+    //| "#" [Parametros<op>]    
   .
   
   Designador<out Operand op>      (.op=null; NDesig id; .)
   = ident                         
-                               (.  Obj o = ts.buscar(t.val);
-                                   op = new Operand(o); .) // retorna o valor da variavel
+                                  (. Obj o = ts.buscar(t.val);
+                                     op = new Operand(o); .) // retorna o valor da variavel
     "."
     
   .
+  
+  DesigIdent<out NDesig n>         
+    = ident                        (. String nome = t.val; .)
+                                   (. n = new NDesig(nome); .)
+	.   
 
+  Laco = 
+  abreParenteses 
+  Exp 
+  ( circunflexo Instrucao |
+    Instrucao circunflexo).
 
   Imprime    
   = aspas 
@@ -224,9 +226,6 @@ Casos:
     | interrogacao ident doispontos
   .
 
- 	DesigIdent<out NDesig n>         
-    = ident                        (. String nome = t.val; .)
-                                   (. n = new NDesig(nome); .)
-	.   
+
 
 END QuasiMouse.
