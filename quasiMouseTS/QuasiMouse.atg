@@ -91,10 +91,10 @@ PRODUCTIONS
   Instrucao // (. Operand op = null; .)              
     = DeclaracaoFuncao 
   //  | ChamadaFuncao 
-   // | Condicional 
+    | Condicional 
   //  | Laco 
     | Assinalamento  // Condicional e Chamada vao dentro do assinalamento
-  //  | Imprime 
+    | Imprime 
   //  | Leitura
     .
 
@@ -121,10 +121,10 @@ PRODUCTIONS
   ";"                                          
  .
 */
-  Assinalamento                    (. Obj o; NDesig id; .)
+  Assinalamento                    (. Obj o; NDesig id; /*Operand op*/; .)
   = Exp <out Operand op>                       
-      [  DesigIdent<out id>         (. o = ts.buscar(id.getNome());  
-                                        op = new Operand(o); .) // insere o valor na variavel
+      [  DesigIdent<out id>         (.  o = ts.inserir(Obj.Var, id.getNome());  
+                                         .) // insere o valor na variavel
                                       
         ":"
       ]
@@ -133,8 +133,8 @@ PRODUCTIONS
    // ]
   .
 
-  Condicional <out int opr>		(. Operand opx, opy; opx = opy = null; opr = 0; .)
-  = 
+  Condicional
+  = ident ponto ({ Exp<out Operand op> } | numero) OpRel<out int opr>
   abreColchete 
   Instrucao 
   [ barraVertical Instrucao ] 
@@ -154,7 +154,7 @@ Casos:
 4. A. 0 <            ~ if altitude < 0
 //A. A. B. / B. * -
 */
- 
+
   Exp <out Operand op>          		(.  op=null; int opr; .) //retorna o valor da expressão entre dois ops
   = 
   Termo  <out op>                   
