@@ -88,12 +88,12 @@ PRODUCTIONS
   .
   Instrucao            
     = DeclaracaoFuncao 
-  //  | ChamadaFuncao 
-   // | Condicional 
-  //  | Laco 
-    | Assinalamento  // Condicional e Chamada vao dentro do assinalamento
-  //  | Imprime 
-  //  | Leitura
+    | ChamadaFuncao 
+      | Condicional 
+    | Laco 
+    | Assinalamento  
+    | Imprime 
+    | Leitura
     .
 
   DeclaracaoFuncao                          (. String s = ""; NDesig id; .)
@@ -112,7 +112,7 @@ PRODUCTIONS
   = { Instrucao }  
     arroba     
   .                               
-/*
+
   ChamadaProcedimento
   = cerquilha 
   Designador <out op>  
@@ -121,7 +121,7 @@ PRODUCTIONS
                             objCode.put2(op.end);.)                        
                                             
  .
-*/
+
 /*
 Casos:
 1. N. 1 + N:         ~ incremente N por 1
@@ -131,7 +131,7 @@ Casos:
 //A. A. B. / B. * -
 */
 
-  Assinalamento                    (. Obj o; NDesig id; opr;.)
+  Assinalamento                    (. Obj o; NDesig id; opr; int end;.)
   = Exp <out Operand op1>                       
       [  DesigIdent<out id>         (. o = ts.buscar(id.getNome());  
                                        Operand op = new Operand(o);
@@ -142,12 +142,35 @@ Casos:
     [
     Exp <out Operand op2>           (. objCode.load(op1); objCode.load(op2);  .)  
     OpRel <out opr>   
-    abreColchete 
-    Instrucao 
-    [ barraVertical Instrucao ] 
+    abreColchete                     
+    Instrucao                       (. end = objCode.putJump(opr, 0); .) // if
+    [ barraVertical                   
+                                     (. int end2 = objCode.putJump(0);
+                                        objCode.fixup(end); .) // else
+      Instrucao                     (.  objCode.fixup(end2); .)
+                                    (.  objCode.fixup(end); .)    
+      ] 
     fechaColchete                 
     ]
   .
+
+  Condicional                       (. int end;  .)
+  = ident ponto (
+    { Exp<out Operand op> }         (.objCode.load(op);.)
+    | numero) OpRel<out int opr>
+  abreColchete 
+  Instrucao                         (. end = objCode.putJump(opr, 0); .) // if
+    [ barraVertical                   
+                                    (. int end2 = objCode.putJump(0);
+                                        objCode.fixup(end); .) // else
+      Instrucao                     (.  objCode.fixup(end2); .)
+                                    (.  objCode.fixup(end); .)    
+      ] 
+    fechaColchete                 
+    ]
+  .
+
+
 
   OpRel<out int opr>          (. opr = -1; .)
     =  igual                  (. opr = eq; .)
@@ -200,27 +223,25 @@ Casos:
                                    (. n = new NDesig(nome); .)
 	.   
 
-  Laco = 
-  abreParenteses 
+  Laco 
+  = abreParenteses                (. int topo = objCode.getPC();.)
   Exp 
   ( circunflexo Instrucao |
     Instrucao circunflexo).
 
   Imprime    
-  = aspas 
-    string 
-    aspas 
+  = string 
     [ ecomercial ] 
     | 
       (
-        Exp<out op> 
-      | cerquilha Exp<out op> 
+        Exp<out Operand op> 
+      | cerquilha Exp<out Operand op> 
       ) 
     exclamacao 
     [ecomercial] 
     | ecomercial
   .
-  
+
   Leitura 
     = interrogacao 
     | interrogacao ident doispontos

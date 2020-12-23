@@ -1,9 +1,7 @@
 /*
-
 Montador para JVM
 Marco, 2013
 Classes Code e Operand baseadas nas da universidade de Linz
-
 */
 
 import java.util.Hashtable;
