@@ -2,6 +2,7 @@
   Thais e David, 2020
 	Compilador -- Tabela de Simbolos e Checagem Lexica, Sintatica e Semantica
 */
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -20,6 +21,7 @@ COMPILER QuasiMouse
 	private Tab ts;
 	private Obj atual; // indica qual é a função atual
 
+  private Code objCode;
   private static final int // compare operators
             eq = 0,
             lt = 2,
@@ -85,16 +87,16 @@ PRODUCTIONS
                                   ts = new Tab(this);
                                   ts.abrirEscopo("Escopo Global"); .)
   = Instrucao 
-    { Instrucao } 
-    dolarSign                   (. ts.fecharEscopo(); .)
+    { Instrucao }                (. objCode.setDataSize(ts.escopoAtual.nVars);
+    dolarSign                       ts.fecharEscopo(); .)
   .
   Instrucao // (. Operand op = null; .)              
     = DeclaracaoFuncao 
   //  | ChamadaFuncao 
-    | Condicional 
+   // | Condicional 
   //  | Laco 
     | Assinalamento  // Condicional e Chamada vao dentro do assinalamento
-    | Imprime 
+  //  | Imprime 
   //  | Leitura
     .
 
@@ -115,17 +117,20 @@ PRODUCTIONS
     arroba     
   .                               
 /*
-  ChamadaFuncao
+  ChamadaProcedimento
   = cerquilha 
-  DesigIdent<out id>                           
-  ";"                                          
+  Designador <out op>  
+  ";"                    (. objCode.put(objCode.pop);.) // sem parametros
+  Parametros <op>       (. objCode.put(objCode.call); 
+                            objCode.put2(op.end);.)                        
+                                            
  .
 */
-  Assinalamento                    (. Obj o; NDesig id; /*Operand op*/; .)
-  = Exp <out Operand op>                       
-      [  DesigIdent<out id>         (.  o = ts.inserir(Obj.Var, id.getNome());  
-                                         .) // insere o valor na variavel
-                                      
+  Assinalamento                    (. Obj o; NDesig id; Operand num; .)
+  = Exp <out op>                       
+      [  DesigIdent<out id>         (. o = ts.buscar(id.getNome());  
+                                       Operand op = new Operand(o); .) // insere o valor na variavel
+                                      //Code.load(op);
         ":"
       ]
    // [
@@ -133,8 +138,8 @@ PRODUCTIONS
    // ]
   .
 
-  Condicional
-  = ident ponto ({ Exp<out Operand op> } | numero) OpRel<out int opr>
+  Condicional <out int opr>		(. Operand opx, opy; opx = opy = null; .)
+  = 
   abreColchete 
   Instrucao 
   [ barraVertical Instrucao ] 
@@ -154,7 +159,7 @@ Casos:
 4. A. 0 <            ~ if altitude < 0
 //A. A. B. / B. * -
 */
-
+ 
   Exp <out Operand op>          		(.  op=null; int opr; .) //retorna o valor da expressão entre dois ops
   = 
   Termo  <out op>                   
@@ -163,9 +168,10 @@ Casos:
   [("-"                            // (. opr = objCode.sub .)
   | "+" )]                         // (. opr = objCode.add .)
   {
-      Termo  <out op> 
+      Termo  <out op>                  (. opr = objCode.sub .)
       [Termo  <out op>]
-      ("-" | "+")
+      ("-"                          
+      | "+")
   }
   .
 
@@ -180,10 +186,13 @@ Casos:
     }
    .
   
-  Fator <out Operand  op>     (. op = null; NDesig id;  .)
+  Fator <out Operand  op>    (. op = null; NDesig id;  .)
   = numero                    (. op = new Operand(Integer.parseInt(t.val)); .)
     | DesigIdent <out id>     (. Obj o = ts.buscar(id.getNome()); op = new Operand(o);  .)   
     // | "#" chamada de funcao   
+    [
+      Parametros<op>          (. .)
+    ]
   .
   
   Designador<out Operand op>      (.op=null; NDesig id; .)
@@ -191,16 +200,19 @@ Casos:
                                (.  Obj o = ts.buscar(t.val);
                                    op = new Operand(o); .) // retorna o valor da variavel
     "."
+    
   .
 
 
   Imprime    
-  = string 
+  = aspas 
+    string 
+    aspas 
     [ ecomercial ] 
     | 
       (
-        Exp<out Operand op> 
-      | cerquilha Exp<out Operand op> 
+        Exp<out op> 
+      | cerquilha Exp<out op> 
       ) 
     exclamacao 
     [ecomercial] 

@@ -176,7 +176,6 @@ public class Parser {
 		if (la.kind == 1) {
 			id = DesigIdent();
 			o = ts.buscar(id.getNome());  
-			Operand num = new Operand(o); 
 			Expect(11);
 		}
 	}
