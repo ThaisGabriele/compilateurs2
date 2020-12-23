@@ -172,10 +172,11 @@ public class Parser {
 
 	void Assinalamento() {
 		Obj o; NDesig id; Operand num; 
-		num = Exp();
+		op = Exp();
 		if (la.kind == 1) {
 			id = DesigIdent();
 			o = ts.buscar(id.getNome());  
+			Operand op = new Operand(o); 
 			Expect(11);
 		}
 	}

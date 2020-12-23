@@ -15,21 +15,21 @@ public class Operand {
     Func   = 6;
 
     public int    cat;	// Const, Local, Static, Stack, Elem, Func
-    public Struct tipo;	// item tipo
+ //   public Struct tipo;	// item tipo
     public Obj    obj;  // Func
     public int    val;  // Const: value
     public int    end;  // Local, Static, Func: address
 
     public Operand(Operand other) {
         this.cat = other.cat;
-        this.tipo = other.tipo;
+   //     this.tipo = other.tipo;
         this.obj = other.obj;
         this.val = other.val;
         this.end = other.end;
     }
     
     public Operand(Obj o) {
-        tipo = o.tipo;
+    //    tipo = o.tipo;
         val = o.val;
         end = o.end;
         cat = Stack; // default
@@ -45,10 +45,10 @@ public class Operand {
             cat = Func;
             obj = o;
             break;
-        case Obj.Tipo:
-            System.out.println("identificador de tipo nao permitido aqui");
-	    System.exit(1);
-            break;
+    //    case Obj.Tipo:
+      //      System.out.println("identificador de tipo nao permitido aqui");
+	   // System.exit(1);
+         //   break;
         default:
             System.out.println("categoria errada de indentificador = " + o.cat);
 	    System.exit(1);
@@ -59,13 +59,13 @@ public class Operand {
     public Operand(int val) {
         cat = Const;
         this.val = val;
-        tipo = Tab.tipoInt;
+     //   tipo = Tab.tipoInt;
     }
 
-    public Operand(int cat, int val, Struct tipo) {
+    public Operand(int cat, int val) {
         this.cat = cat;
         this.val = val;
-        this.tipo = tipo;
+     //   this.tipo = tipo;
     }
 
 }

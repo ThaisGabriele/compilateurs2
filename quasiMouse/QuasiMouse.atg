@@ -21,6 +21,7 @@ COMPILER QuasiMouse
 	private Tab ts;
 	private Obj atual; // indica qual é a função atual
 
+  private Code objCode;
   private static final int // compare operators
             eq = 0,
             lt = 2,
@@ -86,8 +87,8 @@ PRODUCTIONS
                                   ts = new Tab(this);
                                   ts.abrirEscopo("Escopo Global"); .)
   = Instrucao 
-    { Instrucao } 
-    dolarSign                   (. ts.fecharEscopo(); .)
+    { Instrucao }                (. objCode.setDataSize(ts.escopoAtual.nVars);
+    dolarSign                       ts.fecharEscopo(); .)
   .
   Instrucao // (. Operand op = null; .)              
     = DeclaracaoFuncao 
@@ -116,10 +117,13 @@ PRODUCTIONS
     arroba     
   .                               
 /*
-  ChamadaFuncao
+  ChamadaProcedimento
   = cerquilha 
-  DesigIdent<out id>                           
-  ";"                                          
+  Designador <out op>  
+  ";"                    (. objCode.put(objCode.pop);.) // sem parametros
+  Parametros <op>       (. objCode.put(objCode.call); 
+                            objCode.put2(op.end);.)                        
+                                            
  .
 */
   Assinalamento                    (. Obj o; NDesig id; Operand num; .)
@@ -164,9 +168,10 @@ Casos:
   [("-"                            // (. opr = objCode.sub .)
   | "+" )]                         // (. opr = objCode.add .)
   {
-      Termo  <out op> 
+      Termo  <out op>                  (. opr = objCode.sub .)
       [Termo  <out op>]
-      ("-" | "+")
+      ("-"                          
+      | "+")
   }
   .
 
@@ -181,10 +186,13 @@ Casos:
     }
    .
   
-  Fator <out Operand  op>     (. op = null; NDesig id;  .)
+  Fator <out Operand  op>    (. op = null; NDesig id;  .)
   = numero                    (. op = new Operand(Integer.parseInt(t.val)); .)
     | DesigIdent <out id>     (. Obj o = ts.buscar(id.getNome()); op = new Operand(o);  .)   
     // | "#" chamada de funcao   
+    [
+      Parametros<op>          (. .)
+    ]
   .
   
   Designador<out Operand op>      (.op=null; NDesig id; .)
@@ -192,6 +200,7 @@ Casos:
                                (.  Obj o = ts.buscar(t.val);
                                    op = new Operand(o); .) // retorna o valor da variavel
     "."
+    
   .
 
 
